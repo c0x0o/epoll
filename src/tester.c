@@ -1,4 +1,5 @@
 #include "doepoll.h"
+#include <getopt.h>
 #include <netdb.h>
 #include <sys/stat.h>
 
@@ -27,7 +28,7 @@ int delete_connection(struct buffer **conns, int fd) {
     int i;
 
     for (i = 0; i < MAX_CONNECTIONS; i++) {
-        if ((*conns[i]).fd == fd) {
+        if (conns[i]->fd == fd) {
             conns[i] = NULL;
             return 0;
         }
@@ -85,7 +86,7 @@ struct packet *generate_packet(const char *path) {
     char *body;
     int len;
 
-    time(&packet->sendTime);
+    packet->sendTime = time(NULL);
 
     if (path == NULL) {
         // manual mode
@@ -118,6 +119,7 @@ struct packet *generate_packet(const char *path) {
         nBytes = read(fd, body, stat.st_size);
         if (nBytes < 0) {
             free_packet(packet);
+            free(body);
             return NULL;
         }
         close(fd);
@@ -150,7 +152,7 @@ int main(int argc, char **argv) {
     struct packet *packetP = NULL;
     int epollfd;
 
-    memset(connections, 0, MAX_CONNECTIONS);
+    memset(connections, 0, sizeof(struct buffer *)*MAX_CONNECTIONS);
 
     // handle arguments
     while ((ch = getopt(argc, argv, "t:f:h")) != -1) {
@@ -215,13 +217,14 @@ int main(int argc, char **argv) {
 
                 retval = send_packet(fd, packetP);
                 if (retval < 0) {
+                    if (errno == EAGAIN) continue;
+
                     // error encountered
                     perror("send_packet failed");
                     free_buffer(connections[j]);
                     delete_connection(connections, fd);
                     close(fd);
                 } else if (retval == 0) {
-                    // printf("No data sent on fd %d\n", fd);
                 } else {
                     printf("%d bytes data sent to fd %d\n", retval, fd);
                 }
@@ -248,13 +251,16 @@ int main(int argc, char **argv) {
             if (events[i].events & EPOLLIN) {
                 nBytes = recv_data(fd, current_buffer);
                 if (nBytes < 0) {
+                    if (errno == ENOBUFS) continue;
                     perror("recv_data failed");
+
                     free_buffer(current_buffer);
                     delete_connection(connections, fd);
                     close(fd);
                     continue;
                 } else if (nBytes == 0) {
                     printf("disconnect fd %d\n", fd);
+
                     free_buffer(current_buffer);
                     delete_connection(connections, fd);
                     close(fd);

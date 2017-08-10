@@ -5,30 +5,22 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <time.h>
 #include <signal.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
+
+#include "protocol.h"
 #include "bipbuffer.h"
 
-#define MAX_PACKET_SIZE 2048
-#define PACKET_HEAD ((int)(sizeof(int)+sizeof(time_t)))
-#define MAX_PACKET_BODY (MAX_PACKET_SIZE - PACKET_HEAD)
 #define BUFFER_SIZE (2048*10)
 #define BUFFER_BLK_SIZE 64
 
 #define SERVER_DEFAULT_ADDR_STR "127.0.0.1"
 #define SERVER_DEFAULT_PORT_STR "50427"
 #define SERVER_DEFAULT_PORT 50427
-
-struct packet {
-    int length;
-    time_t sendTime;
-    char *body;
-};
 
 struct task {
     struct packet *packet;

@@ -25,7 +25,7 @@ int delete_connection(struct buffer **conns, int fd) {
     int i;
 
     for (i = 0; i < MAX_CONNECTIONS; i++) {
-        if ((*conns[i]).fd == fd) {
+        if (conns[i]->fd == fd) {
             conns[i] = NULL;
             return 0;
         }
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     struct buffer *buffP, *connections[MAX_CONNECTIONS];
     struct epoll_event ev, events[MAX_EVENTS];
 
-    memset(connections, 0, MAX_CONNECTIONS);
+    memset(connections, 0, sizeof(struct buff *)*MAX_CONNECTIONS);
 
     // set server
     server.sin_family = AF_INET;
@@ -147,6 +147,8 @@ int main(int argc, char **argv) {
                 // receive new data
                 retval = recv_data(fd, current_buffer);
                 if (retval < 0) {
+                    if (errno == ENOBUFS) continue;
+
                     // error encountered
                     perror("recv_data failed");
                     free_buffer(current_buffer);
@@ -183,7 +185,6 @@ int main(int argc, char **argv) {
                         delete_connection(connections, fd);
                         close(fd);
                     } else if (retval == 0) {
-                        // printf("No data send on fd %d\n", fd);
                     } else {
                         printf("%d bytes data echo to fd %d\n", retval, fd);
                     }

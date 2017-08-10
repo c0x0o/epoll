@@ -1,7 +1,12 @@
 #include "doepoll.h"
 
 void free_packet(struct packet *packet) {
-    free(packet);
+    if (packet) {
+        if (packet->body) {
+            free(packet->body);
+        }
+        free(packet);
+    }
 }
 
 void free_queue(struct task *task) {
@@ -16,9 +21,11 @@ void free_queue(struct task *task) {
 }
 
 void free_buffer(struct buffer *buff) {
-    free_queue(buff->tasks);
-    bb_destroy(buff->bip);
-    free(buff);
+    if (buff) {
+        free_queue(buff->tasks);
+        bb_destroy(buff->bip);
+        free(buff);
+    }
 }
 
 void print_packet(struct packet *packet) {
@@ -79,14 +86,19 @@ int recv_data(int fd, struct buffer *buffP) {
         nBytes = bb_look(bip, packet, PACKET_HEAD);
         if (nBytes < 0) {
             // no enough data
+            free(taskP);
+            free(packet);
             break;
         }
 
         body = (char *)malloc(packet->length);
         nBytes = bb_look(bip, body, packet->length);
         if (nBytes < 0) {
-            errno = ENOBUFS;
-            return -1;
+            free(taskP);
+            free(packet);
+            free(body);
+
+            break;
         }
 
         nBytes = bb_read(bip, packet, PACKET_HEAD);
