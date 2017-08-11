@@ -48,7 +48,7 @@ int recv_data(int fd, struct buffer *buffP) {
 
     // receive data
     while (1) {
-        base = bb_alloc(bip, BUFFER_BLK_SIZE);
+        base = (char *)bb_alloc(bip, BUFFER_BLK_SIZE);
         if (base == NULL) {
             errno = ENOBUFS;
             return -1;
@@ -137,6 +137,10 @@ int send_data(int fd, struct buffer *buff) {
 
         nBytes = send(fd, send_buffer, packet->length+PACKET_HEAD, 0);
         if (nBytes < 0) {
+            if (errno == EAGAIN) {
+                continue;
+            }
+
             return -1;
         } else {
             prev = taskP;
