@@ -166,8 +166,6 @@ int send_packet(int fd, struct packet *packetP) {
         return -1;
     } else {
         sent += nBytes;
-
-        free_packet(packetP);
     }
 
     return sent;

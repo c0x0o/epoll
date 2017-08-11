@@ -12,15 +12,9 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 
+#include "config.h"
 #include "protocol.h"
 #include "bipbuffer.h"
-
-#define BUFFER_SIZE (2048*10)
-#define BUFFER_BLK_SIZE 64
-
-#define SERVER_DEFAULT_ADDR_STR "127.0.0.1"
-#define SERVER_DEFAULT_PORT_STR "50427"
-#define SERVER_DEFAULT_PORT 50427
 
 struct task {
     struct packet *packet;

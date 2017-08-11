@@ -3,9 +3,6 @@
 #include <netdb.h>
 #include <sys/stat.h>
 
-#define MAX_EVENTS 200
-#define MAX_CONNECTIONS 10000
-
 int max_conn_id = 0;
 
 int get_first_unused(struct buffer **conns) {
@@ -228,6 +225,8 @@ int main(int argc, char **argv) {
                 } else {
                     printf("%d bytes data sent to fd %d\n", retval, fd);
                 }
+
+                free_packet(packetP);
 
                 running = 1;
             }

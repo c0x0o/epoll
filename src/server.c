@@ -1,8 +1,5 @@
 #include "doepoll.h"
 
-#define MAX_EVENTS 200
-#define MAX_CONNECTIONS 10000
-
 int max_conn_id = 0;
 
 int get_first_unused(struct buffer **conns) {
@@ -34,6 +31,10 @@ int delete_connection(struct buffer **conns, int fd) {
     return -1;
 }
 
+// usage:
+// server               default ip: 127.0.0.1 port: 50427
+// server [port]        default ip: 127.0.0.1
+// server [ip] [port]
 int main(int argc, char **argv) {
     struct sockaddr_in server;
     int retval;
