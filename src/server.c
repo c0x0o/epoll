@@ -21,8 +21,8 @@ int get_first_unused(struct buffer **conns) {
 int delete_connection(struct buffer **conns, int fd) {
     int i;
 
-    for (i = 0; i < MAX_CONNECTIONS; i++) {
-        if (conns[i]->fd == fd) {
+    for (i = 0; i <= max_conn_id; i++) {
+        if (conns[i] && conns[i]->fd == fd) {
             conns[i] = NULL;
             return 0;
         }
@@ -185,7 +185,6 @@ int main(int argc, char **argv) {
                         free_buffer(connections[j]);
                         delete_connection(connections, fd);
                         close(fd);
-                    } else if (retval == 0) {
                     } else {
                         printf("%d bytes data echo to fd %d\n", retval, fd);
                     }

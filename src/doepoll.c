@@ -82,6 +82,9 @@ int recv_data(int fd, struct buffer *buffP) {
         struct packet *packet = new_packet();
         char *body = NULL;
 
+        int len;
+        time_t time;
+
         // check whether there are enough data
         nBytes = bb_look(bip, packet, PACKET_HEAD);
         if (nBytes < 0) {
@@ -92,7 +95,7 @@ int recv_data(int fd, struct buffer *buffP) {
         }
 
         body = (char *)malloc(packet->length);
-        nBytes = bb_look(bip, body, packet->length);
+        nBytes = bb_look(bip, NULL, packet->length+PACKET_HEAD);
         if (nBytes < 0) {
             free(taskP);
             free(packet);
@@ -101,9 +104,12 @@ int recv_data(int fd, struct buffer *buffP) {
             break;
         }
 
-        nBytes = bb_read(bip, packet, PACKET_HEAD);
+        nBytes = bb_read(bip, &len, sizeof(int));
+        nBytes = bb_read(bip, &time, sizeof(time_t));
         nBytes = bb_read(bip, body, packet->length);
 
+        packet->length = len;
+        packet->sendTime = time;
         packet->body = body;
 
         taskP->packet = packet;
