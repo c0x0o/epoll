@@ -183,6 +183,7 @@ int main(int argc, char **argv) {
     for (i = 0; i < conn_nums; i++) {
         sock = connect_to(server_ip, server_port);
         if (sock < 0) {
+            perror("create connection failed");
             continue;
         }
         set_none_blocking(sock);
@@ -211,6 +212,10 @@ int main(int argc, char **argv) {
                 int fd = (*connections[j]).fd;
 
                 packetP = generate_packet(file_path);
+                if (packetP == NULL) {
+                    perror("generate packet failed");
+                    continue;
+                }
 
                 retval = send_packet(fd, packetP);
                 if (retval < 0) {

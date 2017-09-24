@@ -29,8 +29,7 @@ void free_buffer(struct buffer *buff) {
 }
 
 void print_packet(struct packet *packet) {
-    printf("new packet incoming:\n");
-    printf("length: %d\n", packet->length);
+    printf("length: %ld\n", packet->length);
     printf("send at: %lu\nbody:", packet->sendTime);
 
     fflush(stdout);
@@ -82,7 +81,7 @@ int recv_data(int fd, struct buffer *buffP) {
         struct packet *packet = new_packet();
         char *body = NULL;
 
-        int len;
+        long int len;
         time_t time;
 
         // check whether there are enough data
@@ -104,7 +103,7 @@ int recv_data(int fd, struct buffer *buffP) {
             break;
         }
 
-        nBytes = bb_read(bip, &len, sizeof(int));
+        nBytes = bb_read(bip, &len, sizeof(long int));
         nBytes = bb_read(bip, &time, sizeof(time_t));
         nBytes = bb_read(bip, body, packet->length);
 

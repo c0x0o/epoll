@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
     ev.data.ptr = buffP;
     epoll_ctl(epollfd, EPOLL_CTL_ADD, listenfd, &ev);
 
-    connections[get_first_unused(connections)] = buffP;
+    connections[0] = buffP;
 
     while (1) {
         int nfds, i, j;
@@ -127,22 +127,28 @@ int main(int argc, char **argv) {
                 struct sockaddr_in client;
                 socklen_t socklen = sizeof(struct sockaddr_in);
 
-                connfd = accept(listenfd, (struct sockaddr *)&client, &socklen);
-                if (connfd < 0) {
-                    perror("accept failed");
-                    exit(EXIT_FAILURE);
+                while (1) {
+                    connfd = accept(listenfd, (struct sockaddr *)&client, &socklen);
+                    if (connfd < 0) {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                            break;
+                        }
+
+                        perror("accept failed");
+                        continue;
+                    }
+                    set_none_blocking(connfd);
+
+                    buffP = new_buffer();
+                    buffP->fd = connfd;
+                    buffP->tasks = NULL;
+                    buffP->bip = bb_create(BUFFER_SIZE);
+                    ev.events = EPOLLIN | EPOLLET;
+                    ev.data.ptr = buffP;
+                    epoll_ctl(epollfd, EPOLL_CTL_ADD, connfd, &ev);
+
+                    connections[get_first_unused(connections)] = buffP;
                 }
-                set_none_blocking(connfd);
-
-                buffP = new_buffer();
-                buffP->fd = connfd;
-                buffP->tasks = NULL;
-                buffP->bip = bb_create(BUFFER_SIZE);
-                ev.events = EPOLLIN | EPOLLET;
-                ev.data.ptr = buffP;
-                epoll_ctl(epollfd, EPOLL_CTL_ADD, connfd, &ev);
-
-                connections[get_first_unused(connections)] = buffP;
 
             } else if (events[i].events & EPOLLIN) {
                 // receive new data
@@ -175,7 +181,8 @@ int main(int argc, char **argv) {
             }
 
             // send all data
-            for (j = 0; j <= max_conn_id; j++) {
+            // j = 0 used for listen fd
+            for (j = 1; j <= max_conn_id; j++) {
                 if (connections[j] != NULL) {
                     int fd = (*connections[j]).fd;
                     retval = send_data(fd, connections[j]);
